@@ -198,10 +198,7 @@ public class main {
 		return enterInvalid;
 	}
 
-	public static HashSet<String> listAllTypes() {
-		
-		return null;
-	}
+	
 	public static boolean askForTypeInfo(Scanner user) {
 		
 		boolean enterInvalid = false;		
