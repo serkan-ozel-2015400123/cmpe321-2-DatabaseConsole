@@ -1,7 +1,9 @@
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.InputMismatchException;
 import java.util.NoSuchElementException;
@@ -10,16 +12,21 @@ import java.util.Vector;
 
 
 public class main {
-
+	
 	
 	
 	
 	public static int TypeFieldNum;
 	
-	
+	static RandomAccessFile systemCatFile;
+
 	public static void main(String args[]) throws IOException, InterruptedException {
+		systemCatFile = new RandomAccessFile("syscatalog.dat", "rw");
+		
 		boolean exit = false;
-		RandomAccessFile systemCatFile = new RandomAccessFile("syscatalog.dat", "rw");
+		
+		systemCatFile.seek(11); // 0-1599 0-10 first 11 byte for page header writeLoc, 11 is the number of full pages byte.
+		systemCatFile.write(1); // Write 1 to number of full pages right now.
 		// System.out.print(systemCatFile.length());
 		
 		Scanner user = new Scanner(System.in);
@@ -40,6 +47,7 @@ public class main {
 				String input = user.next();
 			switch(input) {
 			case "1":
+				
 				System.out.println("Enter name:");
 				System.out.println("It should be alphanumeric. It should not contain non-ascii characters. e.g some turkish letters. ");
 				
@@ -56,6 +64,7 @@ public class main {
 						System.out.println("Invalid name. Enter again.");
 					}
 				}
+				
 				
 				
 				
@@ -87,7 +96,7 @@ public class main {
 		
 	}
 
-	public static boolean askFieldName(Scanner user) {
+	public static boolean askFieldName(Scanner user) throws IOException {
 		
 		boolean enterInvalid = false;		
 		
@@ -98,10 +107,60 @@ public class main {
 			enterInvalid =true;
 			
 		}else {
-			HashSet<String> types = new HashSet<String>();
-			if(types.contains(typeName)) {
-				enterInvalid = true;
+			boolean contains = false;
+			
+			
+			
+			systemCatFile.seek(1);
+			int numFull =  systemCatFile.read();
+			
+			for(int page=0;page<numFull; page++) {
+				System.out.println("Reading page " + (page+1) +  "..");
+				if(page ==0) { 
+					int totalRead = 12;
+					while(totalRead <1600) { // When we finish page
+						byte[] typename = new byte[32];
+						
+						systemCatFile.seek(totalRead);
+						int full = systemCatFile.read(typename,0,32);
+						if(full==-1)break;
+						String typename_ = "";
+						for(int c = 0;c<32;c++) {
+							typename_.concat(Byte.toString(typename[c]));	
+						}
+						if(typename_.equals(typeName)) contains = true;
+						
+						int fieldNum=systemCatFile.read();
+						if(fieldNum==-1)break;
+						totalRead = totalRead +1 +fieldNum*16; // +1 is for the fieldNum byte. totalRead is previously read position. And we have also fieldNum*16 bytes to advance.
+					}
+						
+					
+					
+				}else{ 
+					int totalRead = 11;
+					while(totalRead <1600) { // When we finish page
+						byte[] typename = new byte[32];
+						
+						systemCatFile.seek(totalRead);
+						int full = systemCatFile.read(typename,0,32);
+						if(full==-1)break;
+						String typename_ = "";
+						for(int c = 0;c<32;c++) {
+							typename_.concat(Byte.toString(typename[c]));	
+						}
+						if(typename_.equals(typeName)) contains = true;
+						
+						int fieldNum=systemCatFile.read();
+						if(fieldNum==-1)break;
+						totalRead = totalRead +1 +fieldNum*16; // +1 is for the fieldNum byte. totalRead is previously read position. And we have also fieldNum*16 bytes to advance.
+					}
+							
+				}
+				
 			}
+			
+			if(contains)enterInvalid = true;
 		}
 		
 		return enterInvalid;
