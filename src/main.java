@@ -11,27 +11,35 @@ import java.util.Scanner;
 import java.util.Vector;
 
 
+
 public class main {
 	
 	
-	
+	public int toInt(Byte inp) {
+		
+		return 0;
+	}
+	public Byte toByte(int inp) {
+		Byte ret = new Byte("");
+				return ret;
+	}
 	
 	public static int TypeFieldNum;
 	
-	static RandomAccessFile systemCatFile;
+	static Scanner user = new Scanner(System.in);
+	static file systemCatFile;
+	
+	
 
 	public static void main(String args[]) throws IOException, InterruptedException {
-		systemCatFile = new RandomAccessFile("syscatalog.dat", "rw");
 		
-		boolean exit = false;
+		systemCatFile = new file("syscatalog.dat", "rw");
 		
-		systemCatFile.seek(11); // 0-1599 0-10 first 11 byte for page header writeLoc, 11 is the number of full pages byte.
-		systemCatFile.write(1); // Write 1 to number of full pages right now.
-		// System.out.print(systemCatFile.length());
-		
-		Scanner user = new Scanner(System.in);
+		systemCatFile.write(1);
+
 		System.out.println("Welcome to console storage manager! ");
-		
+
+		boolean exit = false;
 		while(!exit) {
 			
 			System.out.println("Things you can do:");
@@ -49,7 +57,7 @@ public class main {
 			case "1":
 				
 				System.out.println("Enter name:");
-				System.out.println("It should be alphanumeric. It should not contain non-ascii characters. e.g some turkish letters. ");
+				System.out.println("It should not contain non-ascii characters. e.g some turkish letters. ");
 				
 				while(askForTypeInfo(user)) {
 					System.out.println("Invalid name. Enter again.");
@@ -105,13 +113,60 @@ public class main {
 		if(typeName.length()>16 || !typeName.matches("\\A\\p{ASCII}*\\z")) {
 			
 			enterInvalid =true;
+		}
+		
+		return enterInvalid;
+		
+		
+	}
+
+	public static boolean askForFieldNumber(Scanner user) {
+		boolean enterInvalid = false;		
+		boolean hasnttakenInt = true;
+		
+		while(hasnttakenInt) {
+		
+			String fieldNum = user.next();
+			
+		try{
+			
+			
+			if(Integer.parseInt(fieldNum) > 127 || Integer.parseInt(fieldNum) < 0) {
+				
+				enterInvalid =true;
+			
+			}
+			TypeFieldNum =Integer.parseInt(fieldNum);
+			hasnttakenInt = false;
+		}catch (Exception e) {
+			System.out.println("Error. Try again.");
+		}
+		
+		}
+		
+		
+		
+		
+		return enterInvalid;
+	}
+
+	
+	public static boolean askForTypeInfo(Scanner user) throws IOException {
+		
+		boolean enterInvalid = false;	
+		
+		String typeName = user.next();
+		
+		if(typeName.length()>32 || !typeName.matches("\\A\\p{ASCII}*\\z") || typeName.contains(" ")) {
+			
+			enterInvalid =true;
 			
 		}else {
+			
 			boolean contains = false;
 			
 			
-			
-			systemCatFile.seek(1);
+			systemCatFile.seek(11);
 			int numFull =  systemCatFile.read();
 			
 			for(int page=0;page<numFull; page++) {
@@ -159,65 +214,11 @@ public class main {
 				}
 				
 			}
-			
-			if(contains)enterInvalid = true;
-		}
-		
-		return enterInvalid;
-		
-		
-	}
-
-	public static boolean askForFieldNumber(Scanner user) {
-		boolean enterInvalid = false;		
-		boolean hasnttakenInt = true;
-		
-		while(hasnttakenInt) {
-		
-			String fieldNum = user.next();
-			
-		try{
-			
-			
-			if(Integer.parseInt(fieldNum) > 127 || Integer.parseInt(fieldNum) < 0) {
-				
-				enterInvalid =true;
-			
-			}
-			TypeFieldNum =Integer.parseInt(fieldNum);
-			hasnttakenInt = false;
-		}catch (Exception e) {
-			System.out.println("Error. Try again.");
-		}
-		
-		}
-		
-		
-		
-		
-		return enterInvalid;
-	}
-
-	public static HashSet<String> listAllTypes() {
-		
-		return null;
-	}
-	public static boolean askForTypeInfo(Scanner user) {
-		
-		boolean enterInvalid = false;		
-		
-		String typeName = user.next();
-		
-		if(typeName.length()>32 || !typeName.matches("\\A\\p{ASCII}*\\z") || typeName.contains(" ")) {
-			
-			enterInvalid =true;
-			
-		}else {
-			HashSet<String> types = new HashSet<String>();
-			if(types.contains(typeName)) {
+			if(contains) {
 				enterInvalid = true;
 			}
 		}
 		return enterInvalid;
 	}
 }
+
