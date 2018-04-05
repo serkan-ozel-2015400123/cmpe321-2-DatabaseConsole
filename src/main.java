@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.InputMismatchException;
 import java.util.NoSuchElementException;
@@ -82,7 +84,7 @@ String input = user.next();
 						systemCatFile.write(0);
 					}
 					systemCatFile.write(typeName.getBytes());
-					System.out.println("Please enter number of fields that the type will have.(1-127)");
+					System.out.println("Please enter number of fields that the type will have.(1-97)");
 					int entered = user.nextInt();
 					systemCatFile.write(entered);
 					for(int i =1;i<=entered;i++) {
@@ -100,8 +102,11 @@ String input = user.next();
 					int prev = systemCatFile.readInt();
 					systemCatFile.seek((numFull-1)*1600);
 					systemCatFile.writeInt(prev+33+16*entered);
+					System.out.println("Created type: " + typeName + " with " + entered + " field(s).");
+					System.out.println("---------------------------------------------------------------");
 					break;
 				case "2": // Look for the given type and if found delete it. Also need to shift afterwards.
+					System.out.println("Please enter the name of the type you want to delete....");
 					String typeNamed = user.next();
 					int loc = 0;
 					systemCatFile.seek(4);
@@ -109,19 +114,25 @@ String input = user.next();
 					
 					for(int page=0;page<numFulld; page++) {
 						System.out.println("Reading page " + (page+1) +  "..");
+						Thread.sleep(1000);
 						if(page ==0) { 
 							int totalRead = 5;
 							while(totalRead <1600) { // When we finish page
 								byte[] typename = new byte[32];
-
+								
 								systemCatFile.seek(totalRead);
 								int full = systemCatFile.read(typename,0,32);
 								if(full==-1)break;
-								String typename_ = "";
-								for(int c = 0;c<32;c++) {
-									typename_.concat(Byte.toString(typename[c]));	
+								
+								
+								String typename_ = new String(typename,StandardCharsets.UTF_8);
+								
+								String typenameNew_="";
+								for(int i=0;i<typename_.length();i++) {
+									if(typename_.charAt(i)!=0)typenameNew_ = typenameNew_+typename_.charAt(i);
 								}
-								if(typename_.equals(typeNamed)) loc = (int)systemCatFile.getFilePointer()-32;
+								
+								if(typenameNew_.equals(typeNamed)) loc = (int)systemCatFile.getFilePointer()-32;
 
 								int fieldNum=systemCatFile.read();
 								if(fieldNum==-1)break;
@@ -159,28 +170,31 @@ String input = user.next();
 						System.out.println("Cannot find the type: "+ typeNamed);
 						break;
 					}else { 
+						System.out.println("Found. Deleting....");
+						Thread.sleep(100);
 						// deletion
 						systemCatFile.seek(loc);
 						for(int i=1;i<=32;i++) {
 							systemCatFile.write(0);
 						}
 						int fieldNum= systemCatFile.read();
+						systemCatFile.seek(systemCatFile.getFilePointer()-1);
+						systemCatFile.write(0);
 						for(int i=1;i<=fieldNum;i++) {
 							for(int j=1;j<=16;j++) {
 								systemCatFile.write(0);
 							}
 						}
-						// shifting
-						int prevPointer = (int)systemCatFile.getFilePointer();
-						int size = 160000 - (int)systemCatFile.getFilePointer();
+						// shifting all the other records to the left.
 						
-						byte[] willBeShifted = new byte[size];
-						systemCatFile.read(willBeShifted);
 						
-						systemCatFile.seek(prevPointer-32);
-						systemCatFile.write(willBeShifted);
+						
 						
 					}
+					
+					System.out.println("Done with deletion.");
+					System.out.println("---------------------------------------------------------------");
+
 					
 					break;
 				case "3":
